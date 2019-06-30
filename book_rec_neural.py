@@ -108,8 +108,9 @@ def predict(model, df):
 
 def getRecommendedBooks():
     global recBooks, labelencoder_PID, labelencoder_UID
-    tf = pd.read_csv("/goodbooks-10k/books.csv").reset_index()
-    recBooks = pd.merge(predictions, tf[["id","title","authors","image_url","small_image_url"]], left_on = "book_id", right_on = "id")
+    predtop10 = predictions.sort_values(by=["user_id","rating","book_id"], ascending=False).groupby(["user_id"]).head(20)
+    tf = pd.read_csv("goodbooks-10k/books.csv").reset_index()
+    recBooks = pd.merge(predtop10, tf[["id","title","authors","image_url","small_image_url"]], left_on = "book_id", right_on = "id")
     booksRead = pd.merge(listOfBooksReadByTop10, tf[["id","title","authors","image_url","small_image_url"]], left_on = "book_id", right_on = "id")
     print("Following are the recommendations..")
     for user in booksRead.user_id.unique():
@@ -213,8 +214,8 @@ if __name__ == '__main__':
     num_books = df.book_id.unique().shape[0]
     model = get_model(num_users, num_books, mf_dim, layers, reg_layers, reg_mf)
     model.compile(optimizer=Adam(lr=learning_rate), loss= 'mean_squared_error', metrics=['mse'])
-    #model = load_model('recommenderNeuMF.h5')
-    model = trainModel(model, df, num_users, num_books, num_epochs = 12)
+    model = load_model('recommenderNeuMF.h5')
+    #model = trainModel(model, df, num_users, num_books, num_epochs = 12)
     predictions, listOfBooksReadByTop10 = predict(model, df)
     df["book_id"] = labelencoder_PID.inverse_transform(df["book_id"])
     df["user_id"] = labelencoder_UID.inverse_transform(df["user_id"])
@@ -227,4 +228,5 @@ if __name__ == '__main__':
     print("NDCG: " ,ndcg(pre, 10))
     #userMetric = calculatePre_Re(model, predictions, listOfBooksReadByTop10, df)
     #print(userMetric)
-    #getRecommendedBooks()
+    getRecommendedBooks()
+

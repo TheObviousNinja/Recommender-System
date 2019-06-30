@@ -37,7 +37,7 @@ listOfBooksReadByTop10 = []
 recBooksEn = []
 
 def getDataFromFile():
-    df = pd.read_csv("/goodbooks-10k/ratings.csv")
+    df = pd.read_csv("goodbooks-10k/ratings.csv")
     threeabvrating = df[df["rating"]>=3]
     books = threeabvrating.groupby("book_id").agg({"user_id":"count", "rating" : "mean"}).reset_index().rename(columns = {"user_id" : "count_users","rating": "avg_rating"})
     sorted_bks = books.sort_values(by=['count_users', 'avg_rating'], ascending=False).reset_index()
@@ -198,8 +198,9 @@ def predict(weights):
 
 def getRecommendedBooks():
     global recBooksEn
-    tf = pd.read_csv("C:/Users/Shivaranjani/Downloads/goodbooks-10k/books.csv").reset_index()
-    recBooksEn = pd.merge(predictionsEn, tf[["id","title","authors","image_url","small_image_url"]], left_on = "book_id", right_on = "id")
+    tf = pd.read_csv("goodbooks-10k/books.csv").reset_index()
+    predtop10 = predictionsEn.sort_values(by=["user_id","rating","book_id"], ascending=False).groupby(["user_id"]).head(20)
+    recBooksEn = pd.merge(predtop10, tf[["id","title","authors","image_url","small_image_url"]], left_on = "book_id", right_on = "id")
     booksRead = pd.merge(listOfBooksReadByTop10, tf[["id","title","authors","image_url","small_image_url"]], left_on = "book_id", right_on = "id")
     print("Following are the recommendations..")
     for user in booksRead.user_id.unique():
@@ -307,9 +308,10 @@ def main():
     getPredictedMse(df, listOfBooksReadByTop10)
     pre = predictionsEn.sort_values(by=["user_id","book_id"], ascending=False).reset_index().rating
     print("NDCG: " ,ndcg(pre, 10))
-    #getRecommendedBooks()
+    getRecommendedBooks()
 
 if __name__ == "__main__":
     main()
 
     
+
